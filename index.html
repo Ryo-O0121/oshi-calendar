@@ -1,40 +1,139 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#9ccfe0"><title>推しカレンダー</title>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#9ccfe0">
+<title>推しカレンダー</title>
 <style>
 :root{--b:#9ccfe0;--p:#eef9fc;--i:#344b55;--l:#d9edf3}*{box-sizing:border-box}body{margin:0;background:#f4fbfd;color:var(--i);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif}.app{padding-bottom:90px}header{background:#fff;padding:30px 18px 12px;border-bottom:1px solid var(--l);position:sticky;top:0;z-index:5}h1{margin:0 0 16px;color:#82bfd4;font-size:28px}.tabs,.filters{display:flex;gap:8px;overflow:auto}.tab,.filter,.small{white-space:nowrap;border:0;background:#edf7fa;color:#668793;padding:10px 15px;border-radius:22px}.active{background:var(--b)!important;color:white!important}main{padding:18px}.panel{background:#fff;border-radius:22px;padding:18px;margin-bottom:15px;box-shadow:0 7px 25px #b8dce544}h2{margin:0 0 15px}.month{display:flex;align-items:center;justify-content:space-between}.month button{background:#edf7fa;border:0;border-radius:12px;padding:8px 14px}.week,.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.week div{text-align:center;font-size:12px;color:#8aa1a8;padding:5px}.day{min-height:65px;background:#f8fcfd;border:1px solid #e6f3f6;border-radius:10px;padding:5px}.today{outline:2px solid var(--b)}.ev{display:block;background:#d9eef5;border-radius:6px;padding:3px;font-size:10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.item{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--l)}.thumb,.person img{width:55px;height:55px;border-radius:14px;object-fit:cover;background:#e8f5f8;flex:none}.itembody{flex:1}.star{float:right;border:0;background:none;font-size:25px;color:#9bb1b8}.star.on{color:#e5b94f}.badge{display:inline-block;background:#edf7fa;padding:4px 7px;border-radius:9px;font-size:11px;margin:3px}.muted{color:#718990;font-size:13px}.fab{position:fixed;right:20px;bottom:22px;width:62px;height:62px;border:0;border-radius:50%;background:var(--b);color:#fff;font-size:34px;box-shadow:0 8px 25px #8fbfd055;z-index:10}.modalbg{display:none;position:fixed;inset:0;background:#0005;z-index:20;overflow:auto}.modalbg.show{display:block}.modal{background:white;max-width:650px;margin:12px auto;padding:20px;border-radius:24px}label{display:block;font-size:13px;font-weight:700;margin:12px 0 5px}input,select,textarea{width:100%;padding:10px;border:1px solid #cfe5eb;border-radius:11px;background:#fbfeff;color:var(--i)}textarea{min-height:75px}.g2{display:grid;grid-template-columns:1fr 1fr;gap:9px}.actions{display:flex;gap:8px;margin-top:18px}.primary,.secondary,.danger{border:0;padding:12px;border-radius:11px}.primary{background:var(--b);color:#fff;flex:1}.secondary{background:#edf7fa;color:#668793}.danger{background:#fff0f0;color:#a66}.section{border-top:1px solid var(--l);margin-top:16px;padding-top:10px}.person{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--l)}.person img{width:60px;height:60px}.tour{background:#f7fcfd;border-radius:15px;padding:12px;margin:8px 0}
 @media(max-width:600px){.modal{margin:8px}.g2{grid-template-columns:1fr}}
-</style></head><body><div class="app">
-<header><h1>推しカレンダー</h1><div class="tabs"><button class="tab active" data-v="cal">カレンダー</button><button class="tab" data-v="list">予定一覧</button><button class="tab" data-v="people">人物・作品</button><button class="tab" data-v="tours">ツアー</button></div></header><main id="main"></main><button class="fab" id="fab">＋</button></div>
+</style>
+</head>
+<body>
+<div class="app">
+<header><h1>推しカレンダー</h1><div class="tabs">
+<button class="tab active" data-v="cal">カレンダー</button>
+<button class="tab" data-v="list">予定一覧</button>
+<button class="tab" data-v="people">人物・作品</button>
+<button class="tab" data-v="tours">ツアー</button>
+</div></header>
+<main id="main"></main>
+<button type="button" class="fab" id="fab" aria-label="予定を追加">＋</button>
+</div>
 <div class="modalbg" id="mb"><div class="modal" id="modal"></div></div>
+
 <script>
-const K="oshiCal2";let S=JSON.parse(localStorage.getItem(K)||'{"events":[],"people":[{"id":"other","name":"その他","photo":""}],"tours":[]}'),V="cal",M=new Date(new Date().getFullYear(),new Date().getMonth(),1),F="all";
+const K="oshiCal2";
+let S=JSON.parse(localStorage.getItem(K)||'{"events":[],"people":[{"id":"other","name":"その他","photo":""}],"tours":[]}'),V="cal",M=new Date(new Date().getFullYear(),new Date().getMonth(),1),F="all";
 const C=["ライブ","イベント","物販","映画","交通","宿泊","その他"],T=["チケット未予約・未購入","チケット予約済み（当落待ち）","チケット確保・購入済","チケット未発券","発券済"];
-const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])),today=()=>new Date().toISOString().slice(0,10),pn=id=>S.people.find(p=>p.id===id)?.name||"その他",pp=id=>S.people.find(p=>p.id===id)?.photo||"",save=()=>{localStorage.setItem(K,JSON.stringify(S));render()};
+const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const today=()=>new Date().toISOString().slice(0,10);
+const pn=id=>S.people.find(p=>p.id===id)?.name||"その他";
+const pp=id=>S.people.find(p=>p.id===id)?.photo||"";
+const save=()=>{localStorage.setItem(K,JSON.stringify(S));render()};
+
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{V=b.dataset.v;render()});
 function render(){document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.v===V));({cal:calendar,list:list,people:people,tours:tours}[V])()}
-function calendar(){let y=M.getFullYear(),m=M.getMonth(),first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate(),h=`<div class=panel><div class=month><button onclick="M.setMonth(M.getMonth()-1);render()">‹</button><h2>${y}年${m+1}月</h2><button onclick="M.setMonth(M.getMonth()+1);render()">›</button></div><div class=week>${"日月火水木金土".split("").map(x=>`<div>${x}</div>`).join("")}</div><div class=cal>`;for(let i=0;i<first;i++)h+="<div></div>";for(let d=1;d<=last;d++){let date=`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`,es=S.events.filter(e=>e.date===date);h+=`<div class="day ${date===today()?"today":""}"><b>${d}</b>${es.slice(0,3).map(e=>`<span class=ev>${esc(e.title)}</span>`).join("")}</div>`}h+=`</div></div>`;main.innerHTML=h}
-function list(){let fs=[["all","すべて"],["unfinished","終わってない"],["star","★ お気に入り"],["go","行く"],["interest","気になる"],...T.map((x,i)=>["t"+i,x])];let es=S.events.filter(e=>F==="all"||(F==="unfinished"&&e.date>=today())||(F==="star"&&e.star)||(F==="go"&&e.go)||(F==="interest"&&e.interest)||(F[0]=="t"&&e.ticket===T[+F.slice(1)])).sort((a,b)=>a.date.localeCompare(b.date));let h=`<div class=panel><h2>予定一覧</h2><div class=filters>${fs.map(x=>`<button class="filter ${F===x[0]?"active":""}" onclick="F='${x[0]}';render()">${x[1]}</button>`).join("")}</div>`;if(!es.length)h+="<p class=muted style='text-align:center;padding:35px'>該当する予定はありません</p>";es.forEach(e=>{let img=e.icon||pp(e.person);h+=`<div class=item><img class=thumb src="${img||'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2255%22 height=%2255%22%3E%3Crect width=%2255%22 height=%2255%22 rx=%2214%22 fill=%22%23e8f5f8%22/%3E%3C/svg%3E'}"><div class=itembody><button class="star ${e.star?"on":""}" onclick="toggle('${e.id}')">${e.star?"★":"☆"}</button><b>${esc(e.title)}</b><div class=muted>${e.date}${e.time?" "+e.time:""} ・ ${esc(pn(e.person))}</div><span class=badge>${esc(e.cat)}</span>${e.ticket?`<span class=badge>${esc(e.ticket)}</span>`:""}${e.go?'<span class=badge>行く ✓</span>':""}${e.interest?'<span class=badge>気になる</span>':""}<br><button class=small onclick="eventForm('${e.id}')">詳細・編集</button></div></div>`});h+="</div>";main.innerHTML=h}
+
+function calendar(){
+let y=M.getFullYear(),m=M.getMonth(),first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate();
+let h=`<div class=panel><div class=month><button onclick="M.setMonth(M.getMonth()-1);render()">‹</button><h2>${y}年${m+1}月</h2><button onclick="M.setMonth(M.getMonth()+1);render()">›</button></div><div class=week>${"日月火水木金土".split("").map(x=>`<div>${x}</div>`).join("")}</div><div class=cal>`;
+for(let i=0;i<first;i++)h+="<div></div>";
+for(let d=1;d<=last;d++){
+let date=`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`,es=S.events.filter(e=>e.date===date);
+h+=`<div class="day ${date===today()?"today":""}"><b>${d}</b>${es.slice(0,3).map(e=>`<span class=ev>${esc(e.title)}</span>`).join("")}</div>`
+}
+h+=`</div></div>`;main.innerHTML=h
+}
+
+function list(){
+let fs=[["all","すべて"],["unfinished","終わってない"],["star","★ お気に入り"],["go","行く"],["interest","気になる"],...T.map((x,i)=>["t"+i,x])];
+let es=S.events.filter(e=>F==="all"||(F==="unfinished"&&e.date>=today())||(F==="star"&&e.star)||(F==="go"&&e.go)||(F==="interest"&&e.interest)||(F[0]=="t"&&e.ticket===T[+F.slice(1)])).sort((a,b)=>a.date.localeCompare(b.date));
+let h=`<div class=panel><h2>予定一覧</h2><div class=filters>${fs.map(x=>`<button class="filter ${F===x[0]?"active":""}" onclick="F='${x[0]}';render()">${x[1]}</button>`).join("")}</div>`;
+if(!es.length)h+="<p class=muted style='text-align:center;padding:35px'>該当する予定はありません</p>";
+es.forEach(e=>{
+let img=e.icon||pp(e.person);
+h+=`<div class=item><img class=thumb src="${img||'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2255%22 height=%2255%22%3E%3Crect width=%2255%22 height=%2255%22 rx=%2214%22 fill=%22%23e8f5f8%22/%3E%3C/svg%3E'}"><div class=itembody><button class="star ${e.star?"on":""}" onclick="toggle('${e.id}')">${e.star?"★":"☆"}</button><b>${esc(e.title)}</b><div class=muted>${e.date}${e.time?" "+e.time:""} ・ ${esc(pn(e.person))}</div><span class=badge>${esc(e.cat)}</span>${e.ticket?`<span class=badge>${esc(e.ticket)}</span>`:""}${e.go?'<span class=badge>行く ✓</span>':""}${e.interest?'<span class=badge>気になる</span>':""}<br><button class=small onclick="eventForm('${e.id}')">詳細・編集</button></div></div>`
+});
+h+="</div>";main.innerHTML=h
+}
 function toggle(id){let e=S.events.find(x=>x.id===id);e.star=!e.star;save()}
-function people(){let h=`<div class=panel><div class=month><h2>人物・作品</h2><button class=small onclick=personForm()>＋追加</button></div>`;S.people.forEach(p=>h+=`<div class=person onclick="personDetail('${p.id}')"><img src="${p.photo}"><div><b>${esc(p.name)}</b><div class=muted>${S.events.filter(e=>e.person===p.id).length}件</div></div></div>`);h+="</div>";main.innerHTML=h}
-function personDetail(id){let p=S.people.find(x=>x.id===id),es=S.events.filter(e=>e.person===id);main.innerHTML=`<div class=panel><h2>${esc(p.name)}</h2>${es.map(e=>`<div class=item><div><b>${esc(e.title)}</b><div class=muted>${e.date} ・ ${e.cat}</div></div></div>`).join("")}<button class=secondary onclick="V='people';render()">← 戻る</button></div>`}
-function tours(){let h=`<div class=panel><div class=month><h2>ツアー</h2><button class=small onclick=tourForm()>＋追加</button></div>`;S.tours.forEach(t=>{let es=S.events.filter(e=>e.tour===t.id).sort((a,b)=>a.date.localeCompare(b.date));h+=`<div class=tour><b>${esc(t.name)}</b>${es.map(e=>`<div>${e.date}　${esc(e.title)}</div>`).join("")||"<span class=muted>公演予定を登録すると集約されます</span>"}</div>`});if(!S.tours.length)h+="<p class=muted>ツアーはまだありません</p>";h+="</div>";main.innerHTML=h}
+
+function people(){
+let h=`<div class=panel><div class=month><h2>人物・作品</h2><button class=small onclick=personForm()>＋追加</button></div>`;
+S.people.forEach(p=>h+=`<div class=person onclick="personDetail('${p.id}')"><img src="${p.photo}"><div><b>${esc(p.name)}</b><div class=muted>${S.events.filter(e=>e.person===p.id).length}件</div></div></div>`);
+h+="</div>";main.innerHTML=h
+}
+function personDetail(id){
+let p=S.people.find(x=>x.id===id),es=S.events.filter(e=>e.person===id);
+main.innerHTML=`<div class=panel><h2>${esc(p.name)}</h2>${es.map(e=>`<div class=item><div><b>${esc(e.title)}</b><div class=muted>${e.date} ・ ${e.cat}</div></div></div>`).join("")}<button class=secondary onclick="V='people';render()">← 戻る</button></div>`
+}
+function tours(){
+let h=`<div class=panel><div class=month><h2>ツアー</h2><button class=small onclick=tourForm()>＋追加</button></div>`;
+S.tours.forEach(t=>{let es=S.events.filter(e=>e.tour===t.id).sort((a,b)=>a.date.localeCompare(b.date));h+=`<div class=tour><b>${esc(t.name)}</b>${es.map(e=>`<div>${e.date}　${esc(e.title)}</div>`).join("")||"<span class=muted>公演予定を登録すると集約されます</span>"}</div>`});
+if(!S.tours.length)h+="<p class=muted>ツアーはまだありません</p>";h+="</div>";main.innerHTML=h
+}
+
 const rd=id=>document.getElementById(id)?.value||"";
-function modal(h){modalEl.innerHTML=h;mb.classList.add("show")}function closeM(){mb.classList.remove("show")}
 const mb=document.getElementById("mb"),modalEl=document.getElementById("modal"),main=document.getElementById("main");
-document.getElementById("fab").addEventListener("click",()=>{try{eventForm()}catch(err){console.error(err);alert("予定入力画面の読み込みに失敗しました。ページを再読み込みしてください。")}});
+function modal(h){modalEl.innerHTML=h;mb.classList.add("show")}
+function closeM(){mb.classList.remove("show")}
 mb.onclick=e=>{if(e.target===mb)closeM()};
-function eventForm(id){let e=id?S.events.find(x=>x.id===id):{id:"",title:"",person:"other",cat:"ライブ",date:today(),time:"",official:"",x:"",insta:"",star:false,go:false,interest:false,ticket:T[0],type:"",tour:"",venue:"",doors:"",start:"",apps:[]};let po=S.people.map(p=>`<option value="${p.id}" ${p.id===e.person?"selected":""}>${esc(p.name)}</option>`).join("");let to=`<option value="">なし</option>`+S.tours.map(t=>`<option value="${t.id}" ${t.id===e.tour?"selected":""}>${esc(t.name)}</option>`).join("");modalEl.dataset.id=e.id;modal(`<h2>${id?"予定を編集":"予定を追加"}</h2><label>タイトル *</label><input id=title value="${esc(e.title)}"><div class=g2><div><label>人物・作品</label><select id=person>${po}</select></div><div><label>カテゴリ</label><select id=cat onchange=fields()>${C.map(c=>`<option ${c===e.cat?"selected":""}>${c}</option>`).join("")}</select></div></div><div class=g2><div><label>日付 *</label><input id=date type=date value="${e.date}"></div><div><label>時刻</label><input id=time type=time value="${e.time}"></div></div><div id=fields></div><div class=section><label>画像（最大3枚）</label><input id=imgs type=file accept=image/* multiple><div class=muted>予定ごとの画像があれば人物写真より優先表示します。</div></div><div class=g2><div><label>公式URL</label><input id=official type=url value="${esc(e.official)}"></div><div><label>X URL</label><input id=x type=url value="${esc(e.x)}"></div></div><label>Instagram URL</label><input id=insta type=url value="${esc(e.insta)}"><div class=g2><div><label>お気に入り</label><select id=star><option value=0>☆</option><option value=1 ${e.star?"selected":""}>★</option></select></div><div><label>行く／気になる</label><select id=flag><option>未設定</option><option ${e.go?"selected":""}>行く</option><option ${e.interest?"selected":""}>気になる</option></select></div></div><label>メモ</label><textarea id=notes>${esc(e.notes)}</textarea><div class=actions><button class=secondary onclick=closeM()>キャンセル</button><button class=primary onclick=saveEvent()>保存</button>${id?`<button class=danger onclick="delEvent('${id}')">削除</button>`:""}</div>`);window.E=e;fields()}
-function fields(){let e=window.E,c=rd("cat"),h="";if(c==="ライブ")h=`<div class=section><h3>ライブ情報</h3><div class=g2><div><label>会場</label><input id=venue value="${esc(e.venue)}"></div><div><label>ツアー</label><select id=tour>${document.getElementById("tour")?.innerHTML||`<option value="">なし</option>`+S.tours.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`}</select></div><div><label>開場時間</label><input id=doors type=time value="${e.doors}"></div><div><label>開演時間</label><input id=start type=time value="${e.start}"></div></div><label>申し込み期間（最大5回）</label><div id=apps>${(e.apps||[]).map((a,i)=>app(a,i)).join("")}</div><button class=small onclick=addApp()>＋申し込み期間を追加</button><div class=g2><div><label>チケット状態</label><select id=ticket>${T.map(x=>`<option ${x===e.ticket?"selected":""}>${x}</option>`).join("")}</select></div><div><label>紙／電子</label><select id=type onchange=ticketFields()><option value="">未設定</option><option ${e.type==="電子"?"selected":""}>電子</option><option ${e.type==="紙"?"selected":""}>紙</option></select></div></div><div id=ticketExtra></div></div>`;else if(c==="映画")h=`<div class=section><label>公開日</label><input id=release type=date value="${e.release||e.date}"><label>劇場・上映メモ</label><input id=venue value="${esc(e.venue)}"></div>`;else if(c==="交通")h=`<div class=section><div class=g2><div><label>往路／復路</label><select id=direction><option>往路</option><option ${e.direction==="復路"?"selected":""}>復路</option></select></div><div><label>移動手段</label><input id=transport value="${esc(e.transport)}"></div><div><label>出発地</label><input id=from value="${esc(e.from)}"></div><div><label>到着地</label><input id=to value="${esc(e.to)}"></div><div><label>便名・列車名</label><input id=route value="${esc(e.route)}"></div><div><label>座席</label><input id=seat value="${esc(e.seat)}"></div></div></div>`;else if(c==="宿泊")h=`<div class=section><label>ホテル名</label><input id=hotel value="${esc(e.hotel)}"><div class=g2><div><label>チェックイン</label><input id=checkin type=datetime-local value="${e.checkin||""}"></div><div><label>チェックアウト</label><input id=checkout type=datetime-local value="${e.checkout||""}"></div></div><label>予約URL</label><input id=booking type=url value="${esc(e.booking)}"></div>`;fieldsEl.innerHTML=h;if(c==="ライブ"){document.getElementById("tour").value=e.tour||"";ticketFields()}}
-const fieldsEl={set innerHTML(x){document.getElementById("fields").innerHTML=x}};
+
+document.getElementById("fab").onclick=function(){
+  try{eventForm()}
+  catch(err){console.error(err);alert("予定入力画面の読み込みに失敗しました。ページを再読み込みしてください。")}
+};
+
+function eventForm(id){
+let e=id?S.events.find(x=>x.id===id):{id:"",title:"",person:"other",cat:"ライブ",date:today(),time:"",official:"",x:"",insta:"",star:false,go:false,interest:false,ticket:T[0],type:"",tour:"",venue:"",doors:"",start:"",apps:[]};
+let po=S.people.map(p=>`<option value="${p.id}" ${p.id===e.person?"selected":""}>${esc(p.name)}</option>`).join("");
+let to=`<option value="">なし</option>`+S.tours.map(t=>`<option value="${t.id}" ${t.id===e.tour?"selected":""}>${esc(t.name)}</option>`).join("");
+modalEl.dataset.id=e.id;
+modal(`<h2>${id?"予定を編集":"予定を追加"}</h2><label>タイトル *</label><input id=title value="${esc(e.title)}"><div class=g2><div><label>人物・作品</label><select id=person>${po}</select></div><div><label>カテゴリ</label><select id=cat onchange=fields()>${C.map(c=>`<option ${c===e.cat?"selected":""}>${c}</option>`).join("")}</select></div></div><div class=g2><div><label>日付 *</label><input id=date type=date value="${e.date}"></div><div><label>時刻</label><input id=time type=time value="${e.time}"></div></div><div id=fields></div><div class=section><label>画像（最大3枚）</label><input id=imgs type=file accept=image/* multiple><div class=muted>予定ごとの画像があれば人物写真より優先表示します。</div></div><div class=g2><div><label>公式URL</label><input id=official type=url value="${esc(e.official)}"></div><div><label>X URL</label><input id=x type=url value="${esc(e.x)}"></div></div><label>Instagram URL</label><input id=insta type=url value="${esc(e.insta)}"><div class=g2><div><label>お気に入り</label><select id=star><option value=0>☆</option><option value=1 ${e.star?"selected":""}>★</option></select></div><div><label>行く／気になる</label><select id=flag><option>未設定</option><option ${e.go?"selected":""}>行く</option><option ${e.interest?"selected":""}>気になる</option></select></div></div><label>メモ</label><textarea id=notes>${esc(e.notes)}</textarea><div class=actions><button class=secondary onclick=closeM()>キャンセル</button><button class=primary onclick=saveEvent()>保存</button>${id?`<button class=danger onclick="delEvent('${id}')">削除</button>`:""}</div>`);
+window.E=e;fields()
+}
+
+function fields(){
+let e=window.E,c=rd("cat"),h="";
+if(c==="ライブ")h=`<div class=section><h3>ライブ情報</h3><div class=g2><div><label>会場</label><input id=venue value="${esc(e.venue)}"></div><div><label>ツアー</label><select id=tour>${document.getElementById("tour")?.innerHTML||`<option value="">なし</option>`+S.tours.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("")}</select></div><div><label>開場時間</label><input id=doors type=time value="${e.doors}"></div><div><label>開演時間</label><input id=start type=time value="${e.start}"></div></div><label>申し込み期間（最大5回）</label><div id=apps>${(e.apps||[]).map((a,i)=>app(a,i)).join("")}</div><button class=small onclick=addApp()>＋申し込み期間を追加</button><div class=g2><div><label>チケット状態</label><select id=ticket>${T.map(x=>`<option ${x===e.ticket?"selected":""}>${x}</option>`).join("")}</select></div><div><label>紙／電子</label><select id=type onchange=ticketFields><option value="">未設定</option><option ${e.type==="電子"?"selected":""}>電子</option><option ${e.type==="紙"?"selected":""}>紙</option></select></div></div><div id=ticketExtra></div></div>`;
+else if(c==="映画")h=`<div class=section><label>公開日</label><input id=release type=date value="${e.release||e.date}"><label>劇場・上映メモ</label><input id=venue value="${esc(e.venue)}"></div>`;
+else if(c==="交通")h=`<div class=section><div class=g2><div><label>往路／復路</label><select id=direction><option>往路</option><option ${e.direction==="復路"?"selected":""}>復路</option></select></div><div><label>移動手段</label><input id=transport value="${esc(e.transport)}"></div><div><label>出発地</label><input id=from value="${esc(e.from)}"></div><div><label>到着地</label><input id=to value="${esc(e.to)}"></div><div><label>便名・列車名</label><input id=route value="${esc(e.route)}"></div><div><label>座席</label><input id=seat value="${esc(e.seat)}"></div></div></div>`;
+else if(c==="宿泊")h=`<div class=section><label>ホテル名</label><input id=hotel value="${esc(e.hotel)}"><div class=g2><div><label>チェックイン</label><input id=checkin type=datetime-local value="${e.checkin||""}"></div><div><label>チェックアウト</label><input id=checkout type=datetime-local value="${e.checkout||""}"></div></div><label>予約URL</label><input id=booking type=url value="${esc(e.booking)}"></div>`;
+document.getElementById("fields").innerHTML=h;
+if(c==="ライブ"){document.getElementById("tour").value=e.tour||"";ticketFields()}
+}
 function app(a={},i=0){return `<div class=tour><b>申し込み ${i+1}</b><div class=g2><div><label>タイトル</label><input class=at value="${esc(a.title)}"></div><div><label>開始</label><input class=as type=datetime-local value="${a.start||""}"></div><div><label>終了</label><input class=ae type=datetime-local value="${a.end||""}"></div><div><label>当落日時</label><input class=ar type=datetime-local value="${a.result||""}"></div></div></div>`}
 function addApp(){let n=document.querySelectorAll("#apps .tour").length;if(n>=5)return alert("最大5件です");document.getElementById("apps").insertAdjacentHTML("beforeend",app({},n))}
-function ticketFields(){let t=rd("type"),e=window.E,h=document.getElementById("ticketExtra");h.innerHTML=t==="電子"?`<label>電子チケットURL</label><input id=ticketUrl type=url value="${esc(e.ticketUrl)}">`:t==="紙"?`<div class=g2><div><label>発券開始</label><input id=issueStart type=datetime-local value="${e.issueStart||""}"></div><div><label>発券終了</label><input id=issueEnd type=datetime-local value="${e.issueEnd||""}"></div></div><label><input id=issued type=checkbox style="width:auto" ${e.issued?"checked":""}> 発券済み</label>`:""}
+function ticketFields(){
+let t=rd("type"),e=window.E,h=document.getElementById("ticketExtra");
+h.innerHTML=t==="電子"?`<label>電子チケットURL</label><input id=ticketUrl type=url value="${esc(e.ticketUrl)}">`:t==="紙"?`<div class=g2><div><label>発券開始</label><input id=issueStart type=datetime-local value="${e.issueStart||""}"></div><div><label>発券終了</label><input id=issueEnd type=datetime-local value="${e.issueEnd||""}"></div></div><label><input id=issued type=checkbox style="width:auto" ${e.issued?"checked":""}> 発券済み</label>`:""
+}
 async function fileData(f){return new Promise(r=>{if(!f)return r("");let q=new FileReader();q.onload=()=>r(q.result);q.readAsDataURL(f)})}
-async function saveEvent(){let e=window.E||{},id=modalEl.dataset.id,fs=[...(document.getElementById("imgs")?.files||[])].slice(0,3),pics=[];for(let f of fs)pics.push(await fileData(f));let flag=rd("flag");let n={...e,id:id||crypto.randomUUID(),title:rd("title").trim(),person:rd("person"),cat:rd("cat"),date:rd("date"),time:rd("time"),official:rd("official"),x:rd("x"),insta:rd("insta"),star:rd("star")==="1",go:flag==="行く",interest:flag==="気になる",notes:rd("notes"),icon:e.icon||"",images:pics.length?pics:(e.images||[])};if(!n.title||!n.date)return alert("タイトルと日付は入力してください");if(n.cat==="ライブ"){n.venue=rd("venue");n.doors=rd("doors");n.start=rd("start");n.tour=rd("tour");n.ticket=rd("ticket");n.type=rd("type");n.apps=[...document.querySelectorAll("#apps .tour")].map(x=>({title:x.querySelector(".at").value,start:x.querySelector(".as").value,end:x.querySelector(".ae").value,result:x.querySelector(".ar").value}));if(n.type==="電子")n.ticketUrl=rd("ticketUrl");if(n.type==="紙"){n.issueStart=rd("issueStart");n.issueEnd=rd("issueEnd");n.issued=!!document.getElementById("issued")?.checked}}else if(n.cat==="映画"){n.release=rd("release");n.venue=rd("venue")}else if(n.cat==="交通"){["direction","transport","from","to","route","seat"].forEach(k=>n[k]=rd(k))}else if(n.cat==="宿泊"){["hotel","checkin","checkout","booking"].forEach(k=>n[k]=rd(k))}let i=S.events.findIndex(x=>x.id===n.id);i<0?S.events.push(n):S.events[i]=n;closeM();save()}
+async function saveEvent(){
+let e=window.E||{},id=modalEl.dataset.id,fs=[...(document.getElementById("imgs")?.files||[])].slice(0,3),pics=[];
+for(let f of fs)pics.push(await fileData(f));
+let flag=rd("flag");
+let n={...e,id:id||crypto.randomUUID(),title:rd("title").trim(),person:rd("person"),cat:rd("cat"),date:rd("date"),time:rd("time"),official:rd("official"),x:rd("x"),insta:rd("insta"),star:rd("star")==="1",go:flag==="行く",interest:flag==="気になる",notes:rd("notes"),icon:e.icon||"",images:pics.length?pics:(e.images||[])};
+if(!n.title||!n.date)return alert("タイトルと日付は入力してください");
+if(n.cat==="ライブ"){
+n.venue=rd("venue");n.doors=rd("doors");n.start=rd("start");n.tour=rd("tour");n.ticket=rd("ticket");n.type=rd("type");
+n.apps=[...document.querySelectorAll("#apps .tour")].map(x=>({title:x.querySelector(".at").value,start:x.querySelector(".as").value,end:x.querySelector(".ae").value,result:x.querySelector(".ar").value}));
+if(n.type==="電子")n.ticketUrl=rd("ticketUrl");
+if(n.type==="紙"){n.issueStart=rd("issueStart");n.issueEnd=rd("issueEnd");n.issued=!!document.getElementById("issued")?.checked}
+}else if(n.cat==="映画"){n.release=rd("release");n.venue=rd("venue")}
+else if(n.cat==="交通"){["direction","transport","from","to","route","seat"].forEach(k=>n[k]=rd(k))}
+else if(n.cat==="宿泊"){["hotel","checkin","checkout","booking"].forEach(k=>n[k]=rd(k))}
+let i=S.events.findIndex(x=>x.id===n.id);i<0?S.events.push(n):S.events[i]=n;
+closeM();save()
+}
 function delEvent(id){if(confirm("削除しますか？")){S.events=S.events.filter(e=>e.id!==id);closeM();save()}}
 function personForm(){modal(`<h2>人物・作品を追加</h2><label>名前 *</label><input id=pn><label>写真</label><input id=pf type=file accept=image/*><div class=actions><button class=secondary onclick=closeM()>キャンセル</button><button class=primary onclick=savePerson()>保存</button></div>`)}
 async function savePerson(){let n=rd("pn").trim();if(!n)return alert("名前を入力してください");S.people.push({id:crypto.randomUUID(),name:n,photo:await fileData(document.getElementById("pf").files[0])});closeM();save()}
 function tourForm(){modal(`<h2>ツアーを追加</h2><label>ツアー名 *</label><input id=tn><div class=actions><button class=secondary onclick=closeM()>キャンセル</button><button class=primary onclick=saveTour()>保存</button></div>`)}
 function saveTour(){let n=rd("tn").trim();if(!n)return alert("ツアー名を入力してください");S.tours.push({id:crypto.randomUUID(),name:n});closeM();save()}
 render();
-</script></body></html>
+</script>
+</body>
+</html>
