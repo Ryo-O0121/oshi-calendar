@@ -17,25 +17,19 @@ body{margin:0;background:#f4fbfd;color:var(--i);font-family:-apple-system,BlinkM
 .app{padding-bottom:90px}
 header{background:#fff;padding:30px 18px 12px;border-bottom:1px solid var(--l);position:sticky;top:0;z-index:5}
 h1{margin:0 0 16px;color:#82bfd4;font-size:28px}
-.tabs,.filters{display:flex;gap:8px;overflow:auto}
-.tab,.filter,.small{white-space:nowrap;border:0;background:#edf7fa;color:#668793;padding:10px 15px;border-radius:22px}
-.tab{cursor:pointer}
+.tabs{display:flex;gap:8px;overflow:auto}
+.tab{white-space:nowrap;border:0;background:#edf7fa;color:#668793;padding:10px 15px;border-radius:22px;cursor:pointer}
 .active{background:var(--b)!important;color:#fff!important}
 main{padding:18px}
 .panel{background:#fff;border-radius:22px;padding:18px;margin-bottom:15px;box-shadow:0 7px 25px #b8dce544}
-h2{margin:0 0 15px}
-.month{display:flex;align-items:center;justify-content:space-between}
-.month button{background:#edf7fa;border:0;border-radius:12px;padding:8px 14px}
 .week,.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
 .week div{text-align:center;font-size:12px;color:#8aa1a8;padding:5px}
 .day{min-height:65px;background:#f8fcfd;border:1px solid #e6f3f6;border-radius:10px;padding:5px}
 .today{outline:2px solid var(--b)}
 .ev{display:block;background:#d9eef5;border-radius:6px;padding:3px;font-size:10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .item{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--l)}
-.thumb,.person img{width:55px;height:55px;border-radius:14px;object-fit:cover;background:#e8f5f8;flex:none}
+.thumb{width:55px;height:55px;border-radius:14px;object-fit:cover;background:#e8f5f8;flex:none}
 .itembody{flex:1}
-.star{float:right;border:0;background:none;font-size:25px;color:#9bb1b8}
-.star.on{color:#e5b94f}
 .badge{display:inline-block;background:#edf7fa;padding:4px 7px;border-radius:9px;font-size:11px;margin:3px}
 .muted{color:#718990;font-size:13px}
 .fab{position:fixed;right:20px;bottom:22px;width:62px;height:62px;border:0;border-radius:50%;background:var(--b);color:#fff;font-size:34px;box-shadow:0 8px 25px #8fbfd055;z-index:10}
@@ -45,20 +39,9 @@ h2{margin:0 0 15px}
 label{display:block;font-size:13px;font-weight:700;margin:12px 0 5px}
 input,select,textarea{width:100%;padding:10px;border:1px solid #cfe5eb;border-radius:11px;background:#fbfeff;color:var(--i)}
 textarea{min-height:75px}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .actions{display:flex;gap:8px;margin-top:18px}
-.primary,.secondary,.danger{border:0;padding:12px;border-radius:11px}
-.primary{background:var(--b);color:#fff;flex:1}
-.secondary{background:#edf7fa;color:#668793}
-.danger{background:#fff0f0;color:#a66}
-.section{border-top:1px solid var(--l);margin-top:16px;padding-top:10px}
-.person{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--l)}
-.person img{width:60px;height:60px}
-.personbody{flex:1;min-width:0}
-.personactions{display:flex;gap:4px}
-.personactions button{border:0;background:#edf7fa;color:#668793;border-radius:9px;padding:7px 8px}
-.personactions .dangerMini{background:#fff0f0;color:#a66}
-.tour{background:#f7fcfd;border-radius:15px;padding:12px;margin:8px 0}
+.primary{border:0;padding:12px;border-radius:11px;background:var(--b);color:#fff;flex:1}
+.secondary{border:0;padding:12px;border-radius:11px;background:#edf7fa;color:#668793}
 </style>
 </head>
 
@@ -81,14 +64,10 @@ textarea{min-height:75px}
 <div class="modalbg" id="mb"><div class="modal" id="modal"></div></div>
 
 <script type="module">
-"use strict";
-
-/* IndexedDB 読み込み */
 import { loadState, saveState } from "./db.js";
 
 let S = await loadState();
 if (!S || typeof S !== "object") S = {};
-
 S.events = Array.isArray(S.events) ? S.events : [];
 S.people = Array.isArray(S.people) ? S.people : [];
 S.tours = Array.isArray(S.tours) ? S.tours : [];
@@ -96,17 +75,8 @@ S.tours = Array.isArray(S.tours) ? S.tours : [];
 if (!S.people.some(p => p.id === "other"))
   S.people.unshift({ id: "other", name: "その他", photo: "" });
 
-S.people.forEach((p, i) => { if (typeof p.order !== "number") p.order = i });
-S.people.sort((a, b) => a.order - b.order);
-
-async function persist() {
-  S.people.forEach((p, i) => p.order = i);
-  await saveState(S);
-}
-
-function save() {
-  persist();
-}
+async function persist() { await saveState(S); }
+function save() { persist(); }
 
 /* タブ切り替え */
 document.querySelectorAll(".tab").forEach(t => {
@@ -127,7 +97,6 @@ function calendar() {
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth();
-
   const first = new Date(y, m, 1);
   const last = new Date(y, m + 1, 0);
 
@@ -141,9 +110,8 @@ function calendar() {
   for (let i = 0; i < first.getDay(); i++) html += `<div></div>`;
 
   for (let d = 1; d <= last.getDate(); d++) {
-    const date = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const date = `${y}-${String(m + 1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
     const evs = S.events.filter(e => e.date === date);
-
     html += `<div class="day ${d === now.getDate() ? "today" : ""}">
       <div>${d}</div>
       ${evs.map(e => `<span class="ev">${e.title}</span>`).join("")}
@@ -158,162 +126,82 @@ function calendar() {
 function list() {
   const main = document.getElementById("main");
   let html = `<div class="panel"><h2>予定一覧</h2>`;
-
-  S.events
-    .slice()
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .forEach(e => {
-      const p = S.people.find(x => x.id === e.person) || { name: "不明" };
-      html += `
-        <div class="item">
-          <img class="thumb" src="${p.photo || 'icon-180.png'}">
-          <div class="itembody">
-            <b>${e.title}</b>
-            <div class="muted">${e.date} ・ ${p.name}</div>
-            <span class="badge">${e.cat}</span>
-            ${e.ticket ? `<span class="badge">${e.ticket}</span>` : ""}
-            ${e.go ? '<span class="badge">行く ✓</span>' : ""}
-            ${e.interest ? '<span class="badge">気になる</span>' : ""}
-            <br>
-            <button type="button" class="small" data-edit="${e.id}">詳細・編集</button>
-          </div>
-        </div>`;
-    });
-
+  S.events.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>{
+    const p = S.people.find(x=>x.id===e.person)||{name:"不明"};
+    html += `<div class="item">
+      <img class="thumb" src="${p.photo||'icon-180.png'}">
+      <div class="itembody">
+        <b>${e.title}</b>
+        <div class="muted">${e.date} ・ ${p.name}</div>
+        <span class="badge">${e.cat}</span>
+        ${e.ticket?`<span class="badge">${e.ticket}</span>`:""}
+        ${e.go?`<span class="badge">行く ✓</span>`:""}
+        ${e.interest?`<span class="badge">気になる</span>`:""}
+        <br>
+        <button type="button" class="secondary" data-edit="${e.id}">編集</button>
+      </div>
+    </div>`;
+  });
   html += `</div>`;
   main.innerHTML = html;
 
-  document.querySelectorAll("[data-edit]").forEach(b => {
-    b.onclick = () => eventForm(b.dataset.edit);
+  document.querySelectorAll("[data-edit]").forEach(b=>{
+    b.onclick = ()=>eventForm(b.dataset.edit);
   });
 }
 
 /* 人物 */
 function people() {
   const main = document.getElementById("main");
-  let html = `<div class="panel"><div class="month">
-      <h2>人物・作品</h2>
-      <button type="button" class="small" id="addPerson">＋追加</button>
+  let html = `<div class="panel"><h2>人物・作品</h2>`;
+  S.people.forEach(p=>{
+    html += `<div class="item">
+      <img class="thumb" src="${p.photo||'icon-180.png'}">
+      <div class="itembody"><b>${p.name}</b></div>
     </div>`;
-
-  S.people.forEach((p, i) => {
-    const img = p.photo || 'icon-180.png';
-    html += `
-      <div class="person">
-        <img src="${img}">
-        <div class="personbody">
-          <b>${p.name}</b>
-          <div class="muted">${S.events.filter(e => e.person === p.id).length}件</div>
-        </div>
-        <div class="personactions">
-          ${i > 1 ? `<button type="button" data-up="${p.id}">↑</button>` : ""}
-          ${i < S.people.length - 1 ? `<button type="button" data-down="${p.id}">↓</button>` : ""}
-          ${p.id !== "other" ? `
-            <button type="button" data-person-edit="${p.id}">変更</button>
-            <button type="button" class="dangerMini" data-person-delete="${p.id}">削除</button>
-          ` : ""}
-        </div>
-      </div>`;
   });
-
-  html += `<p class="muted" style="margin-top:12px">↑↓で並び替え。「その他」は削除・変更できません。</p></div>`;
+  html += `</div>`;
   main.innerHTML = html;
-
-  document.getElementById("addPerson").onclick = () => personForm();
-  document.querySelectorAll("[data-up]").forEach(b => b.onclick = () => movePerson(b.dataset.up, -1));
-  document.querySelectorAll("[data-down]").forEach(b => b.onclick = () => movePerson(b.dataset.down, 1));
-  document.querySelectorAll("[data-person-edit]").forEach(b => b.onclick = () => personForm(b.dataset.personEdit));
-  document.querySelectorAll("[data-person-delete]").forEach(b => b.onclick = () => deletePerson(b.dataset.personDelete));
 }
 
 /* ツアー */
 function tours() {
   const main = document.getElementById("main");
   let html = `<div class="panel"><h2>ツアー</h2>`;
-
-  S.tours.forEach(t => {
-    html += `
-      <div class="tour">
-        <b>${t.title}</b>
-        <div class="muted">${t.start} 〜 ${t.end}</div>
-      </div>`;
+  S.tours.forEach(t=>{
+    html += `<div class="item"><div class="itembody">
+      <b>${t.title}</b>
+      <div class="muted">${t.start}〜${t.end}</div>
+    </div></div>`;
   });
-
   html += `</div>`;
   main.innerHTML = html;
 }
 
-/* 人物フォーム */
-function personForm(id = "") {
-  const p = id ? S.people.find(x => x.id === id) : { id: "", name: "", photo: "" };
-
-  let html = `
-    <h2>${id ? "人物・作品を変更" : "人物・作品を追加"}</h2>
-    <label>名前 *</label>
-    <input id="pn" value="${p.name}">
-    <label>写真${id ? "（変更しない場合は未選択）" : ""}</label>
-    <input id="pf" type="file" accept="image/*">
-    <div class="actions">
-      <button type="button" class="secondary" id="cancelM">キャンセル</button>
-      <button type="button" class="primary" id="saveP">保存</button>
-    </div>`;
-
-  modal(html);
-
-  document.getElementById("cancelM").onclick = closeM;
-  document.getElementById("saveP").onclick = async () => {
-    const name = document.getElementById("pn").value.trim();
-    if (!name) return alert("名前を入力してください");
-
-    let photo = p.photo;
-    const file = document.getElementById("pf").files[0];
-    if (file) photo = await fileToDataURL(file);
-
-    if (!id) {
-      S.people.push({ id: crypto.randomUUID(), name, photo });
-    } else {
-      p.name = name;
-      p.photo = photo;
-    }
-
-    save();
-    people();
-    closeM();
-  };
-}
-
 /* 予定フォーム */
-function eventForm(id = "") {
-  const e = id ? S.events.find(x => x.id === id) : {
+function eventForm(id="") {
+  const e = id ? S.events.find(x=>x.id===id) : {
     id: crypto.randomUUID(),
-    title: "",
-    date: "",
-    person: "other",
-    cat: "",
-    ticket: "",
-    go: false,
-    interest: false
+    title:"", date:"", person:"other",
+    cat:"", ticket:"", go:false, interest:false
   };
 
   let html = `
-    <h2>予定${id ? "を編集" : "を追加"}</h2>
+    <h2>${id?"予定を編集":"予定を追加"}</h2>
     <label>タイトル *</label>
     <input id="et" value="${e.title}">
     <label>日付 *</label>
     <input id="ed" type="date" value="${e.date}">
-    <label>人物・作品</label>
+    <label>人物</label>
     <select id="ep">
-      ${S.people.map(p => `<option value="${p.id}" ${p.id === e.person ? "selected" : ""}>${p.name}</option>`).join("")}
+      ${S.people.map(p=>`<option value="${p.id}" ${p.id===e.person?"selected":""}>${p.name}</option>`).join("")}
     </select>
     <label>カテゴリ</label>
     <input id="ec" value="${e.cat}">
     <label>チケット</label>
     <input id="tk" value="${e.ticket}">
-    <label>行く / 気になる</label>
-    <div class="g2">
-      <label><input type="checkbox" id="go" ${e.go ? "checked" : ""}> 行く</label>
-      <label><input type="checkbox" id="in" ${e.interest ? "checked" : ""}> 気になる</label>
-    </div>
+    <label><input type="checkbox" id="go" ${e.go?"checked":""}> 行く</label>
+    <label><input type="checkbox" id="in" ${e.interest?"checked":""}> 気になる</label>
     <div class="actions">
       <button type="button" class="secondary" id="cancelM">キャンセル</button>
       <button type="button" class="primary" id="saveE">保存</button>
@@ -322,7 +210,7 @@ function eventForm(id = "") {
   modal(html);
 
   document.getElementById("cancelM").onclick = closeM;
-  document.getElementById("saveE").onclick = () => {
+  document.getElementById("saveE").onclick = ()=>{
     e.title = document.getElementById("et").value.trim();
     e.date = document.getElementById("ed").value;
     e.person = document.getElementById("ep").value;
@@ -331,10 +219,9 @@ function eventForm(id = "") {
     e.go = document.getElementById("go").checked;
     e.interest = document.getElementById("in").checked;
 
-    if (!e.title || !e.date) return alert("タイトルと日付は必須です");
+    if(!e.title || !e.date) return alert("タイトルと日付は必須です");
 
-    if (!id) S.events.push(e);
-
+    if(!id) S.events.push(e);
     save();
     list();
     closeM();
@@ -342,32 +229,21 @@ function eventForm(id = "") {
 }
 
 /* モーダル */
-function modal(html) {
-  const mb = document.getElementById("mb");
-  const m = document.getElementById("modal");
-  m.innerHTML = html;
+function modal(html){
+  const mb=document.getElementById("mb");
+  const m=document.getElementById("modal");
+  m.innerHTML=html;
   mb.classList.add("show");
 }
-
-function closeM() {
+function closeM(){
   document.getElementById("mb").classList.remove("show");
 }
 
-/* ファイル → DataURL */
-function fileToDataURL(file) {
-  return new Promise(res => {
-    const r = new FileReader();
-    r.onload = () => res(r.result);
-    r.readAsDataURL(file);
-  });
-}
+/* ＋ボタン（これが重要） */
+document.getElementById("fab").onclick = () => eventForm();
 
 /* 初期表示 */
-function render() {
-  calendar();
-}
-
-render();
+calendar();
 </script>
 
 </body>
