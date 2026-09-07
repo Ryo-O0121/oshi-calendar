@@ -62,7 +62,6 @@ textarea{min-height:75px}
 </div>
 
 <div class="modalbg" id="mb"><div class="modal" id="modal"></div></div>
-
 <script type="module">
 import { loadState, saveState } from "./db.js";
 
@@ -177,57 +176,74 @@ function tours() {
   html += `</div>`;
   main.innerHTML = html;
 }
-
 /* 予定フォーム */
 function eventForm(id="") {
   const e = id ? S.events.find(x=>x.id===id) : {
     id: crypto.randomUUID(),
     title:"", date:"", person:"other",
-    cat:"", ticket:"", go:false, interest:false
+    cat:"", ticket:"", place:"", memo:"",
+    go:false, interest:false
   };
 
   let html = `
     <h2>${id?"予定を編集":"予定を追加"}</h2>
+
     <label>タイトル *</label>
     <input id="et" value="${e.title}">
+
     <label>日付 *</label>
     <input id="ed" type="date" value="${e.date}">
+
     <label>人物</label>
     <select id="ep">
       ${S.people.map(p=>`<option value="${p.id}" ${p.id===e.person?"selected":""}>${p.name}</option>`).join("")}
     </select>
+
     <label>カテゴリ</label>
     <input id="ec" value="${e.cat}">
-    <label>チケット</label>
+
+    <label>チケット情報</label>
     <input id="tk" value="${e.ticket}">
+
+    <label>場所</label>
+    <input id="pl" value="${e.place}">
+
+    <label>メモ</label>
+    <textarea id="mm">${e.memo}</textarea>
+
     <label><input type="checkbox" id="go" ${e.go?"checked":""}> 行く</label>
     <label><input type="checkbox" id="in" ${e.interest?"checked":""}> 気になる</label>
+
     <div class="actions">
       <button type="button" class="secondary" id="cancelM">キャンセル</button>
       <button type="button" class="primary" id="saveE">保存</button>
-    </div>`;
+    </div>
+  `;
 
   modal(html);
 
   document.getElementById("cancelM").onclick = closeM;
+
   document.getElementById("saveE").onclick = ()=>{
     e.title = document.getElementById("et").value.trim();
     e.date = document.getElementById("ed").value;
     e.person = document.getElementById("ep").value;
     e.cat = document.getElementById("ec").value;
     e.ticket = document.getElementById("tk").value;
+    e.place = document.getElementById("pl").value;
+    e.memo = document.getElementById("mm").value;
     e.go = document.getElementById("go").checked;
     e.interest = document.getElementById("in").checked;
 
     if(!e.title || !e.date) return alert("タイトルと日付は必須です");
 
     if(!id) S.events.push(e);
+
     save();
     list();
     closeM();
   };
 }
-
 /* モーダル */
 function modal(html){
   const mb=document.getElementById("mb");
