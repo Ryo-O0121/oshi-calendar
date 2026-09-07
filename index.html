@@ -10,32 +10,6 @@
 <link rel="manifest" href="manifest.webmanifest">
 <title>推しカレンダー</title>
 
-<script type="module">
-import { loadState, saveState } from "./db.js";
-
-let S = await loadState();
-if (!S || typeof S !== "object") S = {};
-
-S.events = Array.isArray(S.events) ? S.events : [];
-S.people = Array.isArray(S.people) ? S.people : [];
-S.tours = Array.isArray(S.tours) ? S.tours : [];
-
-if (!S.people.some(p => p.id === "other"))
-  S.people.unshift({ id: "other", name: "その他", photo: "" });
-
-S.people.forEach((p, i) => { if (typeof p.order !== "number") p.order = i });
-S.people.sort((a, b) => a.order - b.order);
-
-async function persist() {
-  S.people.forEach((p, i) => p.order = i);
-  await saveState(S);
-}
-
-function save() {
-  persist();
-}
-</script>
-
 <style>
 :root{--b:#9ccfe0;--i:#344b55;--l:#d9edf3}
 *{box-sizing:border-box}
@@ -108,12 +82,33 @@ textarea{min-height:75px}
 
 <script type="module">
 "use strict";
-<script type="module">
-"use strict";
 
-/* ------------------------------
-   タブ切り替え
------------------------------- */
+/* IndexedDB 読み込み */
+import { loadState, saveState } from "./db.js";
+
+let S = await loadState();
+if (!S || typeof S !== "object") S = {};
+
+S.events = Array.isArray(S.events) ? S.events : [];
+S.people = Array.isArray(S.people) ? S.people : [];
+S.tours = Array.isArray(S.tours) ? S.tours : [];
+
+if (!S.people.some(p => p.id === "other"))
+  S.people.unshift({ id: "other", name: "その他", photo: "" });
+
+S.people.forEach((p, i) => { if (typeof p.order !== "number") p.order = i });
+S.people.sort((a, b) => a.order - b.order);
+
+async function persist() {
+  S.people.forEach((p, i) => p.order = i);
+  await saveState(S);
+}
+
+function save() {
+  persist();
+}
+
+/* タブ切り替え */
 document.querySelectorAll(".tab").forEach(t => {
   t.onclick = () => {
     document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
@@ -126,9 +121,7 @@ document.querySelectorAll(".tab").forEach(t => {
   };
 });
 
-/* ------------------------------
-   カレンダー描画
------------------------------- */
+/* カレンダー */
 function calendar() {
   const main = document.getElementById("main");
   const now = new Date();
@@ -160,9 +153,8 @@ function calendar() {
   html += `</div></div>`;
   main.innerHTML = html;
 }
-/* ------------------------------
-   予定一覧
------------------------------- */
+
+/* 予定一覧 */
 function list() {
   const main = document.getElementById("main");
   let html = `<div class="panel"><h2>予定一覧</h2>`;
@@ -196,9 +188,7 @@ function list() {
   });
 }
 
-/* ------------------------------
-   人物・作品
------------------------------- */
+/* 人物 */
 function people() {
   const main = document.getElementById("main");
   let html = `<div class="panel"><div class="month">
@@ -236,9 +226,7 @@ function people() {
   document.querySelectorAll("[data-person-delete]").forEach(b => b.onclick = () => deletePerson(b.dataset.personDelete));
 }
 
-/* ------------------------------
-   ツアー
------------------------------- */
+/* ツアー */
 function tours() {
   const main = document.getElementById("main");
   let html = `<div class="panel"><h2>ツアー</h2>`;
@@ -254,9 +242,8 @@ function tours() {
   html += `</div>`;
   main.innerHTML = html;
 }
-/* ------------------------------
-   人物フォーム
------------------------------- */
+
+/* 人物フォーム */
 function personForm(id = "") {
   const p = id ? S.people.find(x => x.id === id) : { id: "", name: "", photo: "" };
 
@@ -295,9 +282,7 @@ function personForm(id = "") {
   };
 }
 
-/* ------------------------------
-   予定フォーム
------------------------------- */
+/* 予定フォーム */
 function eventForm(id = "") {
   const e = id ? S.events.find(x => x.id === id) : {
     id: crypto.randomUUID(),
@@ -356,9 +341,7 @@ function eventForm(id = "") {
   };
 }
 
-/* ------------------------------
-   モーダル
------------------------------- */
+/* モーダル */
 function modal(html) {
   const mb = document.getElementById("mb");
   const m = document.getElementById("modal");
@@ -370,9 +353,7 @@ function closeM() {
   document.getElementById("mb").classList.remove("show");
 }
 
-/* ------------------------------
-   ファイル → DataURL
------------------------------- */
+/* ファイル → DataURL */
 function fileToDataURL(file) {
   return new Promise(res => {
     const r = new FileReader();
@@ -381,9 +362,7 @@ function fileToDataURL(file) {
   });
 }
 
-/* ------------------------------
-   初期表示
------------------------------- */
+/* 初期表示 */
 function render() {
   calendar();
 }
