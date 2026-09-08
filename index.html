@@ -3,9 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>推しカレンダー</title>
-
-<link rel="manifest" href="manifest.webmanifest">
+<title>推しカレンダー（簡易版）</title>
 
 <style>
 body{
@@ -14,7 +12,6 @@ body{
   background:#fafafa;
 }
 
-/* FAB */
 #fab{
   position:fixed;
   right:20px;
@@ -30,7 +27,6 @@ body{
   cursor:pointer;
 }
 
-/* モーダル */
 #mb{
   position:fixed;
   top:0; left:0;
@@ -50,61 +46,28 @@ body{
   border-radius:10px;
 }
 
-/* 一覧 */
-.le{
+.le, .ce{
   padding:10px;
   border-bottom:1px solid #ddd;
   cursor:pointer;
 }
 .ld{ font-weight:bold; }
-.lt{ }
-.lp{ color:#666; }
-
-/* カレンダー */
-.ce{
-  padding:10px;
-  border-bottom:1px solid #ddd;
-  cursor:pointer;
-}
 .cd{ font-weight:bold; }
-.ct{ }
-
-/* 人物 */
-.pe{
-  padding:10px;
-  border-bottom:1px solid #ddd;
-  cursor:pointer;
-}
-.pn{}
-
-/* ツアー */
-.te{
-  padding:10px;
-  border-bottom:1px solid #ddd;
-  cursor:pointer;
-}
-.tn{}
 </style>
 </head>
 
 <body>
 
-<h2>推しカレンダー</h2>
+<h2>推しカレンダー（簡易版）</h2>
 
 <div id="calendar"></div>
 <hr>
 <div id="list"></div>
-<hr>
-<h3>人物</h3>
-<div id="people"></div>
-<hr>
-<h3>ツアー</h3>
-<div id="tours"></div>
 
 <div id="fab">＋</div>
 
 <div id="mb"><div id="modal"></div></div>
 
-<script src="script.js"></script>
+<script src="db.js"></script>
 </body>
 </html>
