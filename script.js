@@ -1,3 +1,10 @@
+/* 
+  推しカレンダー script.js
+  Version: 0.1
+  Date: 2026-09-08
+  Note: ＋押下フォームを詳細版に変更
+*/
+
 import { loadState, saveState } from "./db.js";
 
 let S = await loadState();
@@ -112,13 +119,16 @@ function tours() {
   main.innerHTML = html;
 }
 
-/* 予定フォーム */
+/* 予定フォーム（ver0.1 詳細版） */
 function eventForm(id="") {
   const e = id ? S.events.find(x=>x.id===id) : {
     id: crypto.randomUUID(),
     title:"", date:"", person:"other",
-    cat:"", ticket:"", place:"", memo:"",
-    go:false, interest:false
+    cat:"ライブ", time:"", place:"",
+    tour:"", open:"", start:"",
+    ticket:"未予約", paper:"",
+    url:"", xurl:"", igurl:"",
+    memo:"", go:false, interest:false
   };
 
   let html = `
@@ -127,28 +137,71 @@ function eventForm(id="") {
     <label>タイトル *</label>
     <input id="et" value="${e.title}">
 
-    <label>日付 *</label>
-    <input id="ed" type="date" value="${e.date}">
-
-    <label>人物</label>
+    <label>人物・作品</label>
     <select id="ep">
       ${S.people.map(p=>`<option value="${p.id}" ${p.id===e.person?"selected":""}>${p.name}</option>`).join("")}
     </select>
 
     <label>カテゴリ</label>
-    <input id="ec" value="${e.cat}">
+    <select id="ec">
+      <option value="ライブ" ${e.cat==="ライブ"?"selected":""}>ライブ</option>
+      <option value="イベント" ${e.cat==="イベント"?"selected":""}>イベント</option>
+      <option value="その他" ${e.cat==="その他"?"selected":""}>その他</option>
+    </select>
 
-    <label>チケット情報</label>
-    <input id="tk" value="${e.ticket}">
+    <label>日付 *</label>
+    <input id="ed" type="date" value="${e.date}">
 
-    <label>場所</label>
-    <input id="pl" value="${e.place}">
+    <label>時刻</label>
+    <input id="tm" type="time" value="${e.time||""}">
 
-    <label>メモ</label>
-    <textarea id="mm">${e.memo}</textarea>
+    <h3>ライブ情報</h3>
+
+    <label>会場</label>
+    <input id="pl" value="${e.place||""}">
+
+    <label>ツアー</label>
+    <select id="tr">
+      <option value="">なし</option>
+      ${S.tours.map(t=>`<option value="${t.id}" ${t.id===e.tour?"selected":""}>${t.title}</option>`).join("")}
+    </select>
+
+    <label>開場時間</label>
+    <input id="op" type="time" value="${e.open||""}">
+
+    <label>開演時間</label>
+    <input id="st" type="time" value="${e.start||""}">
+
+    <label>チケット状態</label>
+    <select id="tk">
+      <option value="未予約" ${e.ticket==="未予約"?"selected":""}>チケット未予約・未購入</option>
+      <option value="申込中" ${e.ticket==="申込中"?"selected":""}>申込中</option>
+      <option value="当選" ${e.ticket==="当選"?"selected":""}>当選</option>
+      <option value="落選" ${e.ticket==="落選"?"selected":""}>落選</option>
+      <option value="購入済" ${e.ticket==="購入済"?"selected":""}>購入済</option>
+    </select>
+
+    <label>紙／電子</label>
+    <select id="pt">
+      <option value="">未設定</option>
+      <option value="紙" ${e.paper==="紙"?"selected":""}>紙</option>
+      <option value="電子" ${e.paper==="電子"?"selected":""}>電子</option>
+    </select>
+
+    <label>公式URL</label>
+    <input id="url" value="${e.url||""}">
+
+    <label>X URL</label>
+    <input id="xurl" value="${e.xurl||""}">
+
+    <label>Instagram URL</label>
+    <input id="igurl" value="${e.igurl||""}">
 
     <label><input type="checkbox" id="go" ${e.go?"checked":""}> 行く</label>
     <label><input type="checkbox" id="in" ${e.interest?"checked":""}> 気になる</label>
+
+    <label>メモ</label>
+    <textarea id="mm">${e.memo||""}</textarea>
 
     <div class="actions">
       <button type="button" class="secondary" id="cancelM">キャンセル</button>
@@ -165,11 +218,24 @@ function eventForm(id="") {
     e.date = document.getElementById("ed").value;
     e.person = document.getElementById("ep").value;
     e.cat = document.getElementById("ec").value;
-    e.ticket = document.getElementById("tk").value;
+
+    e.time = document.getElementById("tm").value;
     e.place = document.getElementById("pl").value;
-    e.memo = document.getElementById("mm").value;
+    e.tour = document.getElementById("tr").value;
+    e.open = document.getElementById("op").value;
+    e.start = document.getElementById("st").value;
+
+    e.ticket = document.getElementById("tk").value;
+    e.paper = document.getElementById("pt").value;
+
+    e.url = document.getElementById("url").value;
+    e.xurl = document.getElementById("xurl").value;
+    e.igurl = document.getElementById("igurl").value;
+
     e.go = document.getElementById("go").checked;
     e.interest = document.getElementById("in").checked;
+
+    e.memo = document.getElementById("mm").value;
 
     if(!e.title || !e.date) return alert("タイトルと日付は必須です");
 
