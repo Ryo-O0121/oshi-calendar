@@ -172,6 +172,10 @@ function eventForm(id="") {
     <label>開演時間</label>
     <input id="st" type="time" value="${e.start||""}">
 
+    <label>申し込み期間（最大5回）</label>
+    <div id="applyWrap"></div>
+    <button type="button" id="addApply" class="secondary">＋申し込み期間を追加</button>
+
     <label>チケット状態</label>
     <select id="tk">
       <option value="未予約" ${e.ticket==="未予約"?"selected":""}>チケット未予約・未購入</option>
@@ -187,6 +191,11 @@ function eventForm(id="") {
       <option value="紙" ${e.paper==="紙"?"selected":""}>紙</option>
       <option value="電子" ${e.paper==="電子"?"selected":""}>電子</option>
     </select>
+
+    <label>画像（最大3枚）</label>
+    <input id="img1" type="file">
+    <input id="img2" type="file">
+    <input id="img3" type="file">
 
     <label>公式URL</label>
     <input id="url" value="${e.url||""}">
