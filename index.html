@@ -1,332 +1,110 @@
-/* 予定フォーム（完全版：画像仕様） */
-function eventForm(id = "") {
-  const e = id ? S.events.find(x => x.id === id) : {
-    id: crypto.randomUUID(),
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>推しカレンダー</title>
 
-    /* 基本情報 */
-    title: "",
-    person: "other",
-    cat: "ライブ",
-    date: "",
-    time: "",
+<link rel="manifest" href="manifest.webmanifest">
 
-    /* ライブ情報 */
-    place: "",
-    tour: "",
-    open_time: "",
-    start_time: "",
-    apply: ["", "", "", "", ""],   // 最大5回
-    ticket_status: "",
-    ticket_type: "",               // 紙／電子
-    images: ["", "", ""],          // 最大3枚
-    url_official: "",
-    url_x: "",
-    url_insta: "",
-
-    /* その他 */
-    favorite: false,
-    go: false,
-    interest: false,
-    memo: ""
-  };
-
-  let html = `
-    <h2>${id ? "予定を編集" : "予定を追加"}</h2>
-
-    <label>タイトル *</label>
-    <input id="et" value="${e.title}">
-
-    <label>人物・作品</label>
-    <select id="ep">
-      ${S.people.map(p => `
-        <option value="${p.id}" ${p.id === e.person ? "selected" : ""}>
-          ${p.name}
-        </option>
-      `).join("")}
-    </select>
-
-    <label>カテゴリ</label>
-    <input id="ec" value="${e.cat}">
-
-    <label>日付 *</label>
-    <input id="ed" type="date" value="${e.date}">
-
-    <label>時刻</label>
-    <input id="tm" type="time" value="${e.time}">
-  `;
-  html += `
-
-    <h3>ライブ情報</h3>
-
-    <label>会場</label>
-    <input id="pl" value="${e.place}">
-
-    <label>ツアー</label>
-    <select id="tour">
-      <option value="">なし</option>
-      ${S.tours.map(t => `
-        <option value="${t.id}" ${t.id === e.tour ? "selected" : ""}>
-          ${t.title}
-        </option>
-      `).join("")}
-    </select>
-
-    <label>開場時間</label>
-    <input id="open_time" type="time" value="${e.open_time}">
-
-    <label>開演時間</label>
-    <input id="start_time" type="time" value="${e.start_time}">
-
-    <label>申し込み期間（最大5回）</label>
-    <div id="apply_wrap">
-      ${e.apply.map((v, i) => `
-        <input class="apply" data-i="${i}" type="text" value="${v}" placeholder="例：2026/01/01〜2026/01/10">
-      `).join("")}
-    </div>
-
-    <label>チケット状態</label>
-    <select id="ticket_status">
-      <option value="">未設定</option>
-      <option value="未予約" ${e.ticket_status==="未予約"?"selected":""}>未予約</option>
-      <option value="未購入" ${e.ticket_status==="未購入"?"selected":""}>未購入</option>
-      <option value="当選" ${e.ticket_status==="当選"?"selected":""}>当選</option>
-      <option value="落選" ${e.ticket_status==="落選"?"selected":""}>落選</option>
-      <option value="購入済み" ${e.ticket_status==="購入済み"?"selected":""}>購入済み</option>
-    </select>
-
-    <label>紙／電子</label>
-    <select id="ticket_type">
-      <option value="">未設定</option>
-      <option value="紙" ${e.ticket_type==="紙"?"selected":""}>紙</option>
-      <option value="電子" ${e.ticket_type==="電子"?"selected":""}>電子</option>
-    </select>
-  `;
-  html += `
-
-    <label>画像（最大3枚）</label>
-    <div id="img_wrap">
-      ${e.images.map((v, i) => `
-        <div>
-          <input class="img" data-i="${i}" type="text" value="${v}" placeholder="画像URL">
-        </div>
-      `).join("")}
-    </div>
-
-    <label>公式URL</label>
-    <input id="url_official" value="${e.url_official}">
-
-    <label>X URL</label>
-    <input id="url_x" value="${e.url_x}">
-
-    <label>Instagram URL</label>
-    <input id="url_insta" value="${e.url_insta}">
-
-    <label><input type="checkbox" id="fav" ${e.favorite ? "checked" : ""}> お気に入り</label>
-
-    <label><input type="checkbox" id="go" ${e.go ? "checked" : ""}> 行く</label>
-
-    <label><input type="checkbox" id="in" ${e.interest ? "checked" : ""}> 気になる</label>
-
-    <label>メモ</label>
-    <textarea id="mm">${e.memo}</textarea>
-
-    <div class="actions">
-      <button type="button" class="secondary" id="cancelM">キャンセル</button>
-      <button type="button" class="primary" id="saveE">保存</button>
-    </div>
-  `;
-  modal(html);
-
-  /* ボタン処理 */
-  document.getElementById("cancelM").onclick = closeM;
-
-  document.getElementById("saveE").onclick = () => {
-
-    /* 基本情報 */
-    e.title = document.getElementById("et").value.trim();
-    e.person = document.getElementById("ep").value;
-    e.cat = document.getElementById("ec").value;
-    e.date = document.getElementById("ed").value;
-    e.time = document.getElementById("tm").value;
-
-    /* ライブ情報 */
-    e.place = document.getElementById("pl").value;
-    e.tour = document.getElementById("tour").value;
-    e.open_time = document.getElementById("open_time").value;
-    e.start_time = document.getElementById("start_time").value;
-
-    const applyInputs = document.querySelectorAll(".apply");
-    e.apply = Array.from(applyInputs).map(x => x.value);
-
-    e.ticket_status = document.getElementById("ticket_status").value;
-    e.ticket_type = document.getElementById("ticket_type").value;
-
-    const imgInputs = document.querySelectorAll(".img");
-    e.images = Array.from(imgInputs).map(x => x.value);
-
-    e.url_official = document.getElementById("url_official").value;
-    e.url_x = document.getElementById("url_x").value;
-    e.url_insta = document.getElementById("url_insta").value;
-
-    /* その他 */
-    e.favorite = document.getElementById("fav").checked;
-    e.go = document.getElementById("go").checked;
-    e.interest = document.getElementById("in").checked;
-    e.memo = document.getElementById("mm").value;
-
-    if (!e.title || !e.date) {
-      alert("タイトルと日付は必須です");
-      return;
-    }
-
-    if (!id) S.events.push(e);
-
-    save();
-    list();
-    closeM();
-  };
+<style>
+body{
+  margin:0;
+  font-family:sans-serif;
+  background:#fafafa;
 }
+
+/* FAB */
+#fab{
+  position:fixed;
+  right:20px;
+  bottom:20px;
+  width:60px;
+  height:60px;
+  background:#ff4081;
+  border-radius:50%;
+  color:#fff;
+  font-size:40px;
+  line-height:60px;
+  text-align:center;
+  cursor:pointer;
+}
+
 /* モーダル */
-function modal(html){
-  const mb = document.getElementById("mb");
-  const m = document.getElementById("modal");
-  m.innerHTML = html;
-  mb.classList.add("show");
+#mb{
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,0.5);
+  display:none;
+}
+#mb.show{
+  display:block;
+}
+#modal{
+  background:#fff;
+  width:90%;
+  max-width:600px;
+  margin:40px auto;
+  padding:20px;
+  border-radius:10px;
 }
 
-function closeM(){
-  document.getElementById("mb").classList.remove("show");
+/* 一覧 */
+.le{
+  padding:10px;
+  border-bottom:1px solid #ddd;
+  cursor:pointer;
 }
-/* ＋ボタン（全タブ共通で同じフォームを開く） */
-document.getElementById("fab").onclick = () => eventForm();
-/* 初期表示（全タブ共通で同じフォームを使うため） */
-calendar();
-list();
-people();
-tours();
-/* カレンダー表示 */
-function calendar(){
-  const c = document.getElementById("calendar");
-  c.innerHTML = "";
+.ld{ font-weight:bold; }
+.lt{ }
+.lp{ color:#666; }
 
-  S.events
-    .sort((a,b)=>a.date.localeCompare(b.date))
-    .forEach(e => {
-      const div = document.createElement("div");
-      div.className = "ce";
-
-      div.innerHTML = `
-        <div class="cd">${e.date}</div>
-        <div class="ct">${e.title}</div>
-      `;
-
-      div.onclick = () => eventForm(e.id);
-      c.appendChild(div);
-    });
+/* カレンダー */
+.ce{
+  padding:10px;
+  border-bottom:1px solid #ddd;
+  cursor:pointer;
 }
-/* 一覧表示 */
-function list(){
-  const l = document.getElementById("list");
-  l.innerHTML = "";
+.cd{ font-weight:bold; }
+.ct{ }
 
-  S.events
-    .sort((a,b)=>a.date.localeCompare(b.date))
-    .forEach(e => {
-      const div = document.createElement("div");
-      div.className = "le";
-
-      div.innerHTML = `
-        <div class="ld">${e.date}</div>
-        <div class="lt">${e.title}</div>
-        <div class="lp">${S.people.find(x=>x.id===e.person)?.name || ""}</div>
-      `;
-
-      div.onclick = () => eventForm(e.id);
-      l.appendChild(div);
-    });
+/* 人物 */
+.pe{
+  padding:10px;
+  border-bottom:1px solid #ddd;
+  cursor:pointer;
 }
-/* 人物・作品 */
-function people(){
-  const p = document.getElementById("people");
-  p.innerHTML = "";
+.pn{}
 
-  S.people.forEach(x => {
-    const div = document.createElement("div");
-    div.className = "pe";
-
-    div.innerHTML = `
-      <div class="pn">${x.name}</div>
-    `;
-
-    div.onclick = () => {
-      const name = prompt("名前を編集", x.name);
-      if (!name) return;
-      x.name = name;
-      save();
-      people();
-      list();
-      calendar();
-    };
-
-    p.appendChild(div);
-  });
-}
 /* ツアー */
-function tours(){
-  const t = document.getElementById("tours");
-  t.innerHTML = "";
-
-  S.tours.forEach(x => {
-    const div = document.createElement("div");
-    div.className = "te";
-
-    div.innerHTML = `
-      <div class="tn">${x.title}</div>
-    `;
-
-    div.onclick = () => {
-      const title = prompt("ツアー名を編集", x.title);
-      if (!title) return;
-      x.title = title;
-      save();
-      tours();
-      list();
-      calendar();
-    };
-
-    t.appendChild(div);
-  });
+.te{
+  padding:10px;
+  border-bottom:1px solid #ddd;
+  cursor:pointer;
 }
-/* 保存 */
-function save(){
-  localStorage.setItem("oshi-calendar", JSON.stringify(S));
-}
+.tn{}
+</style>
+</head>
 
-/* 読み込み */
-function load(){
-  const d = localStorage.getItem("oshi-calendar");
-  if (!d) return;
-  try {
-    const j = JSON.parse(d);
-    if (j.events) S.events = j.events;
-    if (j.people) S.people = j.people;
-    if (j.tours) S.tours = j.tours;
-  } catch(e){
-    console.error(e);
-  }
-}
+<body>
 
-load();
-/* データ構造 */
-const S = {
-  events: [],
-  people: [
-    { id: "other", name: "その他" }
-  ],
-  tours: []
-};
-/* 初期化 */
-calendar();
-list();
-people();
-tours();
+<h2>推しカレンダー</h2>
+
+<div id="calendar"></div>
+<hr>
+<div id="list"></div>
+<hr>
+<h3>人物</h3>
+<div id="people"></div>
+<hr>
+<h3>ツアー</h3>
+<div id="tours"></div>
+
+<div id="fab">＋</div>
+
+<div id="mb"><div id="modal"></div></div>
+
+<script src="script.js"></script>
+</body>
+</html>
