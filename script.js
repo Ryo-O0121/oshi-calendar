@@ -2,7 +2,7 @@
   推しカレンダー script.js
   Version: 0.1
   Date: 2026-09-08
-  Note: ＋押下フォームを詳細版に変更
+  Note: ＋押下フォームを画像の詳細版に変更
 */
 
 import { loadState, saveState } from "./db.js";
@@ -119,7 +119,7 @@ function tours() {
   main.innerHTML = html;
 }
 
-/* 予定フォーム（ver0.1 詳細版） */
+/* 予定フォーム（画像通りの詳細版） */
 function eventForm(id="") {
   const e = id ? S.events.find(x=>x.id===id) : {
     id: crypto.randomUUID(),
