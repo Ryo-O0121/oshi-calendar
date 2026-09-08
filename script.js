@@ -1,355 +1,199 @@
-/* データ構造 */
-const S = {
-  events: [],
-  people: [
-    { id: "other", name: "その他" }
-  ],
-  tours: []
-};
+import { loadState, saveState } from "./db.js";
 
-/* 読み込み */
-function load(){
-  const d = localStorage.getItem("oshi-calendar");
-  if (!d) return;
-  try {
-    const j = JSON.parse(d);
-    if (j.events) S.events = j.events;
-    if (j.people) S.people = j.people;
-    if (j.tours) S.tours = j.tours;
-  } catch(e){
-    console.error(e);
-  }
-}
+let S = await loadState();
+if (!S || typeof S !== "object") S = {};
+S.events = Array.isArray(S.events) ? S.events : [];
+S.people = Array.isArray(S.people) ? S.people : [];
+S.tours = Array.isArray(S.tours) ? S.tours : [];
 
-load();
+if (!S.people.some(p => p.id === "other"))
+  S.people.unshift({ id: "other", name: "その他", photo: "" });
 
-/* 保存 */
-function save(){
-  localStorage.setItem("oshi-calendar", JSON.stringify(S));
-}
+async function persist() { await saveState(S); }
+function save() { persist(); }
 
-/* モーダル */
-function modal(html){
-  const mb = document.getElementById("mb");
-  const m = document.getElementById("modal");
-  m.innerHTML = html;
-  mb.classList.add("show");
-}
+/* タブ切り替え */
+document.querySelectorAll(".tab").forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+    t.classList.add("active");
+    const v = t.dataset.v;
+    if (v === "cal") calendar();
+    if (v === "list") list();
+    if (v === "people") people();
+    if (v === "tours") tours();
+  };
+});
 
-function closeM(){
-  document.getElementById("mb").classList.remove("show");
-}
+/* カレンダー */
+function calendar() {
+  const main = document.getElementById("main");
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const first = new Date(y, m, 1);
+  const last = new Date(y, m + 1, 0);
 
-/* イベントフォーム */
-function eventForm(id){
-  let e;
-  if (id){
-    e = S.events.find(x => x.id === id);
-    if (!e) return;
-  } else {
-    e = {
-      id: crypto.randomUUID(),
-      title: "",
-      person: "other",
-      cat: "",
-      date: "",
-      time: "",
-      place: "",
-      tour: "",
-      open_time: "",
-      start_time: "",
-      apply: ["", "", ""],
-      ticket_status: "",
-      ticket_type: "",
-      images: ["", "", ""],
-      url_official: "",
-      url_x: "",
-      url_insta: "",
-      favorite: false,
-      go: false,
-      interest: false,
-      memo: ""
-    };
+  let html = `<div class="panel">
+    <h2>${y}年 ${m + 1}月</h2>
+    <div class="week">
+      <div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>
+    </div>
+    <div class="cal">`;
+
+  for (let i = 0; i < first.getDay(); i++) html += `<div></div>`;
+
+  for (let d = 1; d <= last.getDate(); d++) {
+    const date = `${y}-${String(m + 1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const evs = S.events.filter(e => e.date === date);
+    html += `<div class="day ${d === now.getDate() ? "today" : ""}">
+      <div>${d}</div>
+      ${evs.map(e => `<span class="ev">${e.title}</span>`).join("")}
+    </div>`;
   }
 
-  const peopleOptions = S.people
-    .map(x => `<option value="${x.id}" ${x.id===e.person?"selected":""}>${x.name}</option>`)
-    .join("");
+  html += `</div></div>`;
+  main.innerHTML = html;
+}
 
-  const applyInputs = (e.apply || ["","",""])
-    .map((v,i)=>`<input type="text" class="apply" value="${v}" placeholder="申込${i+1}">`)
-    .join("");
+/* 予定一覧 */
+function list() {
+  const main = document.getElementById("main");
+  let html = `<div class="panel"><h2>予定一覧</h2>`;
+  S.events.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>{
+    const p = S.people.find(x=>x.id===e.person)||{name:"不明"};
+    html += `<div class="item">
+      <img class="thumb" src="${p.photo||'icon-180.png'}">
+      <div class="itembody">
+        <b>${e.title}</b>
+        <div class="muted">${e.date} ・ ${p.name}</div>
+        <span class="badge">${e.cat}</span>
+        ${e.ticket?`<span class="badge">${e.ticket}</span>`:""}
+        ${e.go?`<span class="badge">行く ✓</span>`:""}
+        ${e.interest?`<span class="badge">気になる</span>`:""}
+        <br>
+        <button type="button" class="secondary" data-edit="${e.id}">編集</button>
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+  main.innerHTML = html;
 
-  const imgInputs = (e.images || ["","",""])
-    .map((v,i)=>`<input type="text" class="img" value="${v}" placeholder="画像URL${i+1}">`)
-    .join("");
+  document.querySelectorAll("[data-edit]").forEach(b=>{
+    b.onclick = ()=>eventForm(b.dataset.edit);
+  });
+}
 
-  const html = `
-    <div class="mf">
-      <div class="mh">
-        <input id="et" type="text" placeholder="タイトル" value="${e.title}">
-      </div>
-      <div class="mbb">
-        <label>人物・作品</label>
-        <select id="ep">${peopleOptions}</select>
-      </div>
-      <div class="mbb">
-        <label>カテゴリ</label>
-        <input id="ec" type="text" value="${e.cat}">
-      </div>
-      <div class="mbb">
-        <label>日付</label>
-        <input id="ed" type="date" value="${e.date}">
-      </div>
-      <div class="mbb">
-        <label>時間</label>
-        <input id="tm" type="time" value="${e.time}">
-      </div>
+/* 人物 */
+function people() {
+  const main = document.getElementById("main");
+  let html = `<div class="panel"><h2>人物・作品</h2>`;
+  S.people.forEach(p=>{
+    html += `<div class="item">
+      <img class="thumb" src="${p.photo||'icon-180.png'}">
+      <div class="itembody"><b>${p.name}</b></div>
+    </div>`;
+  });
+  html += `</div>`;
+  main.innerHTML = html;
+}
 
-      <div class="mbg">
-        <div class="mbt">ライブ情報</div>
-        <div class="mbb">
-          <label>会場</label>
-          <input id="pl" type="text" value="${e.place}">
-        </div>
-        <div class="mbb">
-          <label>ツアー</label>
-          <input id="tour" type="text" value="${e.tour}">
-        </div>
-        <div class="mbb">
-          <label>開場</label>
-          <input id="open_time" type="time" value="${e.open_time}">
-        </div>
-        <div class="mbb">
-          <label>開演</label>
-          <input id="start_time" type="time" value="${e.start_time}">
-        </div>
-        <div class="mbb">
-          <label>申込</label>
-          <div class="apply-wrap">
-            ${applyInputs}
-          </div>
-        </div>
-        <div class="mbb">
-          <label>チケット状況</label>
-          <input id="ticket_status" type="text" value="${e.ticket_status}">
-        </div>
-        <div class="mbb">
-          <label>チケット種別</label>
-          <input id="ticket_type" type="text" value="${e.ticket_type}">
-        </div>
-      </div>
+/* ツアー */
+function tours() {
+  const main = document.getElementById("main");
+  let html = `<div class="panel"><h2>ツアー</h2>`;
+  S.tours.forEach(t=>{
+    html += `<div class="item"><div class="itembody">
+      <b>${t.title}</b>
+      <div class="muted">${t.start}〜${t.end}</div>
+    </div></div>`;
+  });
+  html += `</div>`;
+  main.innerHTML = html;
+}
 
-      <div class="mbg">
-        <div class="mbt">画像</div>
-        <div class="mbb">
-          <label>画像URL</label>
-          <div class="img-wrap">
-            ${imgInputs}
-          </div>
-        </div>
-      </div>
+/* 予定フォーム */
+function eventForm(id="") {
+  const e = id ? S.events.find(x=>x.id===id) : {
+    id: crypto.randomUUID(),
+    title:"", date:"", person:"other",
+    cat:"", ticket:"", place:"", memo:"",
+    go:false, interest:false
+  };
 
-      <div class="mbg">
-        <div class="mbt">リンク</div>
-        <div class="mbb">
-          <label>公式サイト</label>
-          <input id="url_official" type="text" value="${e.url_official}">
-        </div>
-        <div class="mbb">
-          <label>X</label>
-          <input id="url_x" type="text" value="${e.url_x}">
-        </div>
-        <div class="mbb">
-          <label>Instagram</label>
-          <input id="url_insta" type="text" value="${e.url_insta}">
-        </div>
-      </div>
+  let html = `
+    <h2>${id?"予定を編集":"予定を追加"}</h2>
 
-      <div class="mbg">
-        <div class="mbt">フラグ</div>
-        <div class="mbb">
-          <label><input id="fav" type="checkbox" ${e.favorite?"checked":""}> 推し</label>
-        </div>
-        <div class="mbb">
-          <label><input id="go" type="checkbox" ${e.go?"checked":""}> 行く</label>
-        </div>
-        <div class="mbb">
-          <label><input id="in" type="checkbox" ${e.interest?"checked":""}> 気になる</label>
-        </div>
-      </div>
+    <label>タイトル *</label>
+    <input id="et" value="${e.title}">
 
-      <div class="mbg">
-        <div class="mbt">メモ</div>
-        <div class="mbb">
-          <textarea id="mm">${e.memo || ""}</textarea>
-        </div>
-      </div>
+    <label>日付 *</label>
+    <input id="ed" type="date" value="${e.date}">
 
-      <div class="mf-btns">
-        <button id="cancelM">キャンセル</button>
-        <button id="saveE">保存</button>
-      </div>
+    <label>人物</label>
+    <select id="ep">
+      ${S.people.map(p=>`<option value="${p.id}" ${p.id===e.person?"selected":""}>${p.name}</option>`).join("")}
+    </select>
+
+    <label>カテゴリ</label>
+    <input id="ec" value="${e.cat}">
+
+    <label>チケット情報</label>
+    <input id="tk" value="${e.ticket}">
+
+    <label>場所</label>
+    <input id="pl" value="${e.place}">
+
+    <label>メモ</label>
+    <textarea id="mm">${e.memo}</textarea>
+
+    <label><input type="checkbox" id="go" ${e.go?"checked":""}> 行く</label>
+    <label><input type="checkbox" id="in" ${e.interest?"checked":""}> 気になる</label>
+
+    <div class="actions">
+      <button type="button" class="secondary" id="cancelM">キャンセル</button>
+      <button type="button" class="primary" id="saveE">保存</button>
     </div>
   `;
 
   modal(html);
 
-  /* ボタン処理 */
   document.getElementById("cancelM").onclick = closeM;
 
-  document.getElementById("saveE").onclick = () => {
-
-    /* 基本情報 */
+  document.getElementById("saveE").onclick = ()=>{
     e.title = document.getElementById("et").value.trim();
+    e.date = document.getElementById("ed").value;
     e.person = document.getElementById("ep").value;
     e.cat = document.getElementById("ec").value;
-    e.date = document.getElementById("ed").value;
-    e.time = document.getElementById("tm").value;
-
-    /* ライブ情報 */
+    e.ticket = document.getElementById("tk").value;
     e.place = document.getElementById("pl").value;
-    e.tour = document.getElementById("tour").value;
-    e.open_time = document.getElementById("open_time").value;
-    e.start_time = document.getElementById("start_time").value;
-
-    const applyInputs = document.querySelectorAll(".apply");
-    e.apply = Array.from(applyInputs).map(x => x.value);
-
-    e.ticket_status = document.getElementById("ticket_status").value;
-    e.ticket_type = document.getElementById("ticket_type").value;
-
-    const imgInputs = document.querySelectorAll(".img");
-    e.images = Array.from(imgInputs).map(x => x.value);
-
-    e.url_official = document.getElementById("url_official").value;
-    e.url_x = document.getElementById("url_x").value;
-    e.url_insta = document.getElementById("url_insta").value;
-
-    /* その他 */
-    e.favorite = document.getElementById("fav").checked;
+    e.memo = document.getElementById("mm").value;
     e.go = document.getElementById("go").checked;
     e.interest = document.getElementById("in").checked;
-    e.memo = document.getElementById("mm").value;
 
-    if (!e.title || !e.date) {
-      alert("タイトルと日付は必須です");
-      return;
-    }
+    if(!e.title || !e.date) return alert("タイトルと日付は必須です");
 
-    if (!id){
-      S.events.push(e);
-    }
+    if(!id) S.events.push(e);
 
     save();
     list();
-    calendar();
     closeM();
   };
+}
+
+/* モーダル */
+function modal(html){
+  const mb=document.getElementById("mb");
+  const m=document.getElementById("modal");
+  m.innerHTML=html;
+  mb.classList.add("show");
+}
+function closeM(){
+  document.getElementById("mb").classList.remove("show");
 }
 
 /* ＋ボタン */
 document.getElementById("fab").onclick = () => eventForm();
 
-/* カレンダー表示 */
-function calendar(){
-  const c = document.getElementById("calendar");
-  c.innerHTML = "";
-
-  S.events
-    .sort((a,b)=>a.date.localeCompare(b.date))
-    .forEach(e => {
-      const div = document.createElement("div");
-      div.className = "ce";
-
-      div.innerHTML = `
-        <div class="cd">${e.date}</div>
-        <div class="ct">${e.title}</div>
-      `;
-
-      div.onclick = () => eventForm(e.id);
-      c.appendChild(div);
-    });
-}
-
-/* 一覧表示 */
-function list(){
-  const l = document.getElementById("list");
-  l.innerHTML = "";
-
-  S.events
-    .sort((a,b)=>a.date.localeCompare(b.date))
-    .forEach(e => {
-      const div = document.createElement("div");
-      div.className = "le";
-
-      div.innerHTML = `
-        <div class="ld">${e.date}</div>
-        <div class="lt">${e.title}</div>
-        <div class="lp">${S.people.find(x=>x.id===e.person)?.name || ""}</div>
-      `;
-
-      div.onclick = () => eventForm(e.id);
-      l.appendChild(div);
-    });
-}
-
-/* 人物・作品 */
-function people(){
-  const p = document.getElementById("people");
-  p.innerHTML = "";
-
-  S.people.forEach(x => {
-    const div = document.createElement("div");
-    div.className = "pe";
-
-    div.innerHTML = `
-      <div class="pn">${x.name}</div>
-    `;
-
-    div.onclick = () => {
-      const name = prompt("名前を編集", x.name);
-      if (!name) return;
-      x.name = name;
-      save();
-      people();
-      list();
-      calendar();
-    };
-
-    p.appendChild(div);
-  });
-}
-
-/* ツアー */
-function tours(){
-  const t = document.getElementById("tours");
-  t.innerHTML = "";
-
-  S.tours.forEach(x => {
-    const div = document.createElement("div");
-    div.className = "te";
-
-    div.innerHTML = `
-      <div class="tn">${x.title}</div>
-    `;
-
-    div.onclick = () => {
-      const title = prompt("ツアー名を編集", x.title);
-      if (!title) return;
-      x.title = title;
-      save();
-      tours();
-      list();
-      calendar();
-    };
-
-    t.appendChild(div);
-  });
-}
-
-/* 初期化 */
+/* 初期表示 */
 calendar();
-list();
-people();
-tours();
